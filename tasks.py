@@ -4,6 +4,7 @@ import os
 import time
 import arrow
 import requests
+import folium
 from peewee import DoesNotExist
 
 import logging
@@ -83,3 +84,44 @@ def download_air_data(ctx):
             logger.info(f'Saved {air_quality}')
         else:
             logger.info(f'Data already exists: {air_data}')
+
+def get_color(aqi):
+    if aqi < 51:
+        color = "#00d200"
+    elif aqi < 101:
+        color = "#feff00"
+    elif aqi < 151:
+        color = "#fe7100"
+    elif aqi < 201:
+        color = "#fe0400"
+    elif aqi < 301:
+        color = "#a30055"
+    elif aqi < 501:
+        color = "#890027"
+    else:
+        color = "#000000"
+    return color
+
+@task
+def create_map(ctx):
+    city_data = City.select()
+    air_data = []
+    for city in city_data:
+        air_quality = AirQuality.select(AirQuality, City).join(City).where(AirQuality.city==city).order_by(-AirQuality.timestamp).first()
+        air_data.append(air_quality)
+    m = folium.Map(location=[37.864767,-122.302741], zoom_start=8)
+    for air in air_data:
+        radius = 5000
+        color = get_color(air.aqi)
+        popup_text = (f'{air.city.name}<br>'
+                    f'AQI: {air.aqi}<br>'
+                    f"Last updated {arrow.get(air.timestamp).humanize()}")
+        folium.Circle(
+            location=[air.city.lat, air.city.lon],
+            radius=radius,
+            color=color,
+            fill=True,
+            popup=popup_text
+        ).add_to(m)
+    m.save(outfile="map.html")
+    # m.save(outfile=f"{slugify(str(datetime.now()))}.html")
