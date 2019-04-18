@@ -10,6 +10,7 @@ pandas = "*"
 arrow = "*"
 peewee = "*"
 invoke = "*"
+python-slugify = "*"
 
 [dev-packages]
 ipdb = "*"
