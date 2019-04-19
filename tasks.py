@@ -124,4 +124,5 @@ def create_map(ctx):
             popup=popup_text
         ).add_to(m)
     m.save(outfile="map.html")
+    logger.info("Finished creating map")
     # m.save(outfile=f"{slugify(str(datetime.now()))}.html")
